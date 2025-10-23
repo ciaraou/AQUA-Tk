@@ -46,11 +46,12 @@ def read_wav_blocks(filename, block_size=2048, overlap=1024):
 
             # Rewind for overlap
     print(f"Expected blocks from wav: {1 + (n_frames - block_size) // step_size}")
+    print(len(blocks))
     print(np.array(blocks).dtype)
     print(np.array(blocks).max(), np.array(blocks).min())
     return blocks
 
-def librosa_to_wav_blocks(audio, sr, block_size=2048, overlap=1024, bit_depth=16):
+def librosa_to_wav_blocks(audio, block_size=2048, overlap=1024, bit_depth=16):
     blocks = []
     
     if audio.ndim == 1:
