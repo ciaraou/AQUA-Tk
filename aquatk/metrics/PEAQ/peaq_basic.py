@@ -246,7 +246,49 @@ def process_audio_files(ref_filename: str, test_filename: str):
 
     avg_DI = np.mean(result["DI_list"])
     avg_ODG = np.mean(result["ODG_list"])
-    print(f"Distortion Index: {avg_DI}, Objective Difference Grade: {avg_ODG}")
+    return {"Distortion Index": avg_DI, "Objective Difference Grade": avg_ODG}
+    #print(f"Distortion Index: {avg_DI}, Objective Difference Grade: {avg_ODG}")
+
+
+def process_audio_data(ref_audio, ref_rate, test_audio, test_rate):
+    def read_and_process_audio(audio) -> np.ndarray:
+        sound_blocks = np.array(librosa_to_wav_blocks(audio))
+        # monoS
+        if sound_blocks.shape[-1] == 1:
+            sound_blocks = np.squeeze(sound_blocks, axis=-1)
+        # stereo
+        elif sound_blocks.shape[-1] == 2:
+            sound_blocks = sound_blocks.mean(axis=-1)
+        return sound_blocks
+
+    ref_blocks = read_and_process_audio(ref_audio)
+    test_blocks = read_and_process_audio(test_audio)
+
+    processed_blocks_list = []
+    state = init_state()
+    num_blocks = len(ref_blocks)
+    result = {"MOV_list": [], "DI_list": [], "ODG_list": []}
+
+    for i in range(num_blocks):
+        boundaryflag = boundary(ref_blocks[i], test_blocks[i], ref_rate)
+        proc, state, movs, di, odg = process_audio_block(
+            ref_blocks[i],
+            test_blocks[i],
+            rate=ref_rate,
+            state=state,
+            boundflag=boundaryflag,
+            test_rate=test_rate,
+        )
+        result["MOV_list"].append(movs)
+        processed_blocks_list.append(proc)
+        result["DI_list"].append(di)
+        result["ODG_list"].append(odg)
+        state["count"] += 1
+
+    avg_DI = np.mean(result["DI_list"])
+    avg_ODG = np.mean(result["ODG_list"])
+    return {"Distortion Index": avg_DI, "Objective Difference Grade": avg_ODG}
+    #print(f"Distortion Index: {avg_DI}, Objective Difference Grade: {avg_ODG}")
 
 
 if __name__ == "__main__":
